@@ -4,10 +4,10 @@ services:
     container_name: uts_mybook_db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_mybook_secret}
-      MYSQL_DATABASE: ${DB_DATABASE:-mybook_db}
-      MYSQL_USER: ${DB_USERNAME:-mybook_user}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-mybook_pass123}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
     networks:
@@ -33,9 +33,9 @@ services:
       DB_CONNECTION: mysql
       DB_HOST: db
       DB_PORT: 3306
-      DB_DATABASE: ${DB_DATABASE:-mybook_db}
-      DB_USERNAME: ${DB_USERNAME:-mybook_user}
-      DB_PASSWORD: ${DB_PASSWORD:-mybook_pass123}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
     ports:
       - "8000:8000"
     depends_on:
