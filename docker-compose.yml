@@ -1,0 +1,66 @@
+services:
+  db:
+    image: mysql:8.0.36
+    container_name: uts_mybook_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_mybook_secret}
+      MYSQL_DATABASE: ${DB_DATABASE:-mybook_db}
+      MYSQL_USER: ${DB_USERNAME:-mybook_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-mybook_pass123}
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - uts_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: uts_mybook_backend
+    restart: unless-stopped
+    environment:
+      APP_NAME: "MyBook"
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: ${APP_KEY}
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-mybook_db}
+      DB_USERNAME: ${DB_USERNAME:-mybook_user}
+      DB_PASSWORD: ${DB_PASSWORD:-mybook_pass123}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - uts_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: uts_mybook_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - uts_network
+
+volumes:
+  db_data:
+    driver: local
+
+networks:
+  uts_network:
+    driver: bridge
