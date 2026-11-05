@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Book;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class BookController extends Controller
 {
@@ -20,7 +22,7 @@ class BookController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
             'type' => 'required|in:novel,comic,anthology',
@@ -28,7 +30,37 @@ class BookController extends Controller
             'status' => 'required|in:unread,reading,completed',
         ]);
 
+        if ($validator->fails()) {
+            Log::warning('Book creation validation failed', [
+                'actor_id' => $request->user()?->id ?? 'unauthenticated',
+                'actor_name' => $request->user()?->name ?? 'guest',
+                'client_ip' => $request->ip(),
+                'action' => 'create_book_validation',
+                'failed_fields' => array_keys($validator->errors()->toArray()),
+                'errors' => $validator->errors()->toArray(),
+                'reason' => 'Payload masukan pengguna melanggar aturan skema validasi katalog buku',
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validasi data buku gagal.',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $validated = $validator->validated();
         $book = Book::create($validated);
+
+        Log::info('Book successfully created and stored', [
+            'actor_id' => $request->user()?->id ?? 'system',
+            'actor_name' => $request->user()?->name ?? 'system',
+            'client_ip' => $request->ip(),
+            'action' => 'create_book',
+            'book_id' => $book->id,
+            'book_title' => $book->title,
+            'book_type' => $book->type,
+            'reason' => 'Pengguna mengirimkan payload valid dan data berhasil dicatat ke basis data',
+        ]);
 
         return response()->json([
             'status' => 'success',
