@@ -1,0 +1,26 @@
+groups:
+  - name: aplikasi_mybook
+    rules:
+      - alert: LayananBackendMati
+        expr: up{job="aplikasi"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend MyBook tidak merespons scrape Prometheus"
+          description: "Target {{ $labels.instance }} pada job {{ $labels.job }} berada dalam kondisi DOWN lebih dari 2 menit."
+          action: "Jalankan 'docker compose ps' lalu periksa log dengan 'docker compose logs backend --tail 50'."
+
+      - alert: RasioErrorBackendTinggi
+        expr: |
+          (
+            sum(rate(http_requests_total{job="aplikasi",status=~"5.."}[5m]))
+            / sum(rate(http_requests_total{job="aplikasi"}[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Rasio error HTTP 5xx pada backend MyBook melebihi 5%"
+          description: "Lebih dari 5% request API mengembalikan respons HTTP 5xx dalam 5 menit terakhir."
+          action: "Cek log error terbaru lewat 'docker compose logs backend --tail 100' dan verifikasi koneksi container db."
